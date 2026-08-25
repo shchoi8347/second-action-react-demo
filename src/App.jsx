@@ -9,6 +9,7 @@ function App() {
           <img src={logo} />
         </div>
         <h1>Learn & Master GitHub Actions</h1>
+        <h1>최승훈</h1>
       </header>
       <MainContent />
     </>
