@@ -1,53 +1,75 @@
 name: Deploy Project
 
+# 이 Workflow는 GitHub에 코드가 push되거나 수동 실행될 때 자동으로 실행됩니다.
+# 목적: 테스트를 통과한 코드만 배포 환경으로 보내서 Vercel에 실제 서비스로 배포함.
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches: [main]  # main 브랜치에 코드가 push되면 실행
+  workflow_dispatch:  # GitHub Actions 탭에서 수동 실행도 가능
 
 jobs:
+  # 1) 테스트 작업: 코드가 정상 동작하는지 먼저 검증
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # GitHub가 제공하는 Ubuntu 환경에서 실행 
     steps:
       - name: Get code from repository
+        # 저장소의 코드를 runner(실행 환경)로 내려받음
         uses: actions/checkout@v4
 
       - name: Set up Node.js
+        # Node.js 20 버전을 설치해서 JavaScript/React 프로젝트를 실행할 수 있게 함
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+          cache: npm  # npm 캐시를 사용해 설치 속도를 높임
 
       - name: Install dependencies
+        # package-lock.json 기준으로 의존성을 깔끔하게 설치
+        # CI 환경에서는 npm install보다 npm ci가 더 안정적임
         run: npm ci
 
       - name: Run tests
+        # 프로젝트의 테스트 스크립트를 실행해서 코드가 정상인지 확인
+        # 실패하면 이후 deploy job은 실행되지 않음
         run: npm test
 
+  # 2) 배포 작업: 테스트를 통과한 경우에만 실행
   deploy:
-    needs: test
+    needs: test  # test job이 성공해야만 이 job이 실행됨
     runs-on: ubuntu-latest
     steps:
       - name: Get code from repository
+        # 배포 작업에서도 코드가 필요하므로 다시 checkout
         uses: actions/checkout@v4
 
       - name: Set up Node.js
+        # 배포 전에 다시 Node.js 환경을 준비함
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
       - name: Install dependencies
+        # 배포용으로 의존성을 다시 설치
         run: npm ci
 
       - name: Build project
+        # React/Vite 앱을 프로덕션 빌드 파일로 생성
+        # 보통 dist 폴더 안에 최종 정적 파일이 만들어짐
         run: npm run build
 
       - name: Deploy to Vercel
+        # Vercel에 실제 서비스 배포를 수행
+        # secrets에 저장한 토큰, 조직 ID, 프로젝트 ID를 사용함
         uses: amondnet/vercel-action@v42
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          # Vercel 인증 토큰. GitHub Actions가 Vercel에 로그인할 수 있게 해줌
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          # 개인/팀 계정의 조직 또는 사용자 식별 값
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          # 배포할 Vercel 프로젝트의 고유 ID
           working-directory: .
+          # 현재 저장소 루트를 기준으로 배포
           vercel-args: '--prod'
+          # 프로덕션 배포 모드로 배포함
