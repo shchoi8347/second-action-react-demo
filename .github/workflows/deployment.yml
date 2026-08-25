@@ -10,7 +10,7 @@ on:
 jobs:
   # 1) 테스트 작업: 코드가 정상 동작하는지 먼저 검증
   test:
-    runs-on: ubuntu-latest  # GitHub가 제공하는 Ubuntu 환경에서 실행  
+    runs-on: ubuntu-latest  # GitHub가 제공하는 Ubuntu 환경에서 실행   
     steps:
       - name: Get code from repository
         # 저장소의 코드를 runner(실행 환경)로 내려받음
